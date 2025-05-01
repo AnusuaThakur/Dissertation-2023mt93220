@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>User Data Submission</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .status { font-weight: bold; margin-top: 10px; }
+        .new-data { color: green; }
+        .no-change { color: gray; }
+        .input-group { margin-bottom: 10px; }
+        .changed { border: 2px solid green; } /* Highlight changed fields */
+    </style>
+    <script>
+        let originalData = {};
+
+        function trackChanges(field) {
+            let input = document.getElementById(field);
+            if (input.value.trim() !== (originalData[field] || "")) {
+                input.classList.add("changed");
+            } else {
+                input.classList.remove("changed");
+            }
+        }
+
+        function validateForm() {
+            let changedFields = {};
+            let formFields = ["name", "email", "phone", "address", "dob"];
+
+            formFields.forEach(field => {
+                let input = document.getElementById(field);
+                let newValue = input.value.trim();
+                let oldValue = originalData[field] || "";
+
+                if (newValue !== oldValue) {
+                    changedFields[field] = newValue;
+                }
+            });
+
+           if (Object.keys(changedFields).length === 0) {
+    console.log("Submitting even though no changes detected.");
+    document.getElementById("changedData").value = "{}"; // Send empty JSON
+}
+
+            document.getElementById("changedData").value = JSON.stringify(changedFields);
+            return true;
+        }
+
+        window.onload = function () {
+            let formFields = ["name", "email", "phone", "address", "dob"]; // Removed "address"
+            formFields.forEach(field => {
+                let input = document.getElementById(field);
+                originalData[field] = input ? input.value.trim() : "";
+            });
+        };
+    </script>
+</head>
+<body>
+<form action="/logout" method="get" style="position: absolute; top: 20px; right: 20px;">
+        <button type="submit" style="background-color: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">
+            Logout
+        </button>
+    </form>
+    <h1>User Data Submission</h1>
+
+    <p th:if="${message}" class="status" th:classappend="${message == 'Data Transmitted' ? 'new-data' : 'no-change'}" th:text="${message}"></p>
+
+    <form th:action="@{/user-ui/submit}" method="post" onsubmit="return validateForm()">
+        <div class="input-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" th:value="${name}" oninput="trackChanges('name')" required />
+        </div>
+
+        <div class="input-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" th:value="${email}" oninput="trackChanges('email')" required />
+        </div>
+        
+        
+        <div class="input-group">
+            <label for="phone">Phone Number:</label>
+            <input type="text" id="phone" name="phone" th:value="${phone}" oninput="trackChanges('phone')" required />
+        </div>
+
+        <div class="input-group">
+            <label for="address">Address:</label>
+            <input type="text" id="address" name="address" th:value="${address}" oninput="trackChanges('address')" required />
+        </div>
+
+        <div class="input-group">
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" th:value="${dob}" oninput="trackChanges('dob')" required />
+        </div>
+
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>Last Submitted Data:</h2>
+    <p th:text="'Name: ' + ${name}"></p>
+    <p th:text="'Email: ' + ${email}"></p>
+     <p th:text="'Phone: ' + ${phone}"></p>
+    <p th:text="'Address: ' + ${address}"></p>
+    <p th:text="'Date of Birth: ' + ${dob}"></p>
+    
+    <script>
+    document.addEventListener("DOMContentLoaded", function () { 
+        let formFields = ["name", "email", "phone", "address", "dob"];  
+
+        formFields.forEach(field => {
+            let input = document.getElementById(field);
+            if (input) {
+                originalData[field] = input.value.trim();  // Now, it gets the correct email
+                console.log("Field:", field, "Loaded Value:", originalData[field]); // Debugging log
+            }
+        });
+    });
+</script>
+</body>
+</html>

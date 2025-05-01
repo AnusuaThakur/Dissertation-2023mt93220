@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Include your CSS file here -->
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Register</h2>
+        
+        <!-- Display registration success or error message -->
+        <div id="register-message" class="error-message"></div>
+        
+        <!-- Registration form -->
+        <form id="register-form">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="input-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm-password" required>
+            </div>
+            <button type="submit">Register</button>
+        </form>
+
+        <p>Already have an account? <a href="login.html">Login</a></p>
+    </div>
+
+    <script>
+        // Handle registration form submission via AJAX
+        document.getElementById('register-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            
+            // Clear any previous messages
+            document.getElementById('register-message').innerHTML = '';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Check if passwords match
+            if (password !== confirmPassword) {
+                document.getElementById('register-message').innerHTML = "Passwords do not match!";
+                return;
+            }
+            
+            // Create the user object for registration
+            const user = {
+                username: username,
+                password: password
+            };
+            
+            // Send the registration request to the backend
+            fetch('/api/users/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('register-message').innerHTML = data.message;
+                    setTimeout(() => {
+                        window.location.href = 'login.html';  // Redirect to login page after successful registration
+                    }, 2000);
+                } else {
+                    document.getElementById('register-message').innerHTML = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* General Page Styling */
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f4f7f6; 
+            color: #333; 
+        }
+        h1, h2, h3 { color: #2c3e50; }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            display: flex; 
+            justify-content: space-between; 
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        /* Metric Cards */
+        .metric-card {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            text-align: center;
+            width: 220px;
+        }
+        .metric-title { font-size: 18px; font-weight: bold; color: #2980b9; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #27ae60; }
+
+        /* User Data Table */
+        .user-data-table {
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .user-data-table th, .user-data-table td { 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            text-align: left; 
+        }
+        .user-data-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .user-data-table tr:nth-child(even) { background-color: #f9f9f9; }
+
+        /* Filter Form */
+        .filter-form {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .filter-form input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 200px;
+        }
+        .filter-form button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .filter-form button:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+	<div id="network-alert" style="display:none; background-color: #ffcccc; color: #a94442; padding: 10px; margin-bottom: 20px; border: 1px solid #ebccd1; border-radius: 5px;">
+    ⚠️ High Network Load Detected!
+</div>
+    <h2>Network Metrics</h2>
+    <div class="dashboard-container">
+        <div class="metric-card">
+            <div class="metric-title">Network Load</div>
+            <div class="metric-value" th:text="${load} + '%'"></div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Throughput</div>
+            <div class="metric-value" th:text="${throughput} + ' KB/s'"></div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Latency</div>
+            <div class="metric-value" th:text="${latency} + ' ms'"></div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Changed Fields</div>
+            <div class="metric-value" th:text="${lastChangedFieldCount}"></div>
+        </div>
+    </div>
+    
+    <h2>Top Active Users</h2>
+	<canvas id="topUsersChart" width="300" height="150"></canvas>
+   <script th:inline="javascript">
+    /*<![CDATA[*/
+    var topUsersData = /*[[${topUsers}]]*/ {};
+    var labels = Object.keys(topUsersData).map(function(key) { return 'User ' + key; });
+    var data = Object.values(topUsersData);
+
+    var ctx = document.getElementById('topUsersChart').getContext('2d');
+    var topUsersChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Top Active Users (Changed Fields)',
+                data: data,
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                    stepSize: 1,
+                    precision: 0
+                }
+                }
+            }
+        }
+    });
+    /*]]>*/
+</script>
+   
+    <h2>User Data Submissions</h2>
+    
+    <!-- Filter Form -->
+    <form method="get" action="/admin/dashboard" class="filter-form">
+        <label><strong>Filter by User ID:</strong></label>
+        <input type="text" name="userId" placeholder="Enter User ID">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Display Data for a Specific User -->
+    <div th:if="${userId != null}">
+        <h3>User Data for ID: <span th:text="${userId}"></span></h3>
+        <p><strong>Changed Fields in Last Submission:</strong> <span th:text="${lastChangedFieldCount}"></span></p>
+        <table class="user-data-table">
+            <tr>
+                <th>Field</th>
+                <th>Value</th>
+            </tr>
+            <tr th:each="entry : ${userData}">
+                <td th:text="${entry.key}"></td>
+                <td th:text="${entry.value}"></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Display All Users' Data if no specific user is selected -->
+    <div th:if="${userId == null and allUserData != null}">
+        <h3>All Users' Last Submitted Data</h3>
+        <p><strong>Total Changed Fields Across All Users:</strong> <span th:text="${lastChangedFieldCount}"></span>
+        &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+    <strong>Last Active User ID:</strong> 
+    <span th:text="${lastActiveUserId != null ? lastActiveUserId : 'N/A'}"></span></p>
+        <table class="user-data-table">
+            <tr>
+                <th>User ID</th>
+                <th>Data</th>
+                <th>Modified Fields</th>
+            </tr>
+            <tr th:each="entry : ${allUserData}">
+                <td th:text="${entry.key}"></td>
+                <td>
+                    <ul>
+                        <li th:each="data : ${entry.value.entrySet()}">
+                            <strong th:text="${data.key}"></strong>: <span th:text="${data.value}"></span>
+                        </li>
+                    </ul>
+                </td>
+                <td> 
+				<span th:text="${modifiedFieldsMap[entry.key] ?: 'No Changes'}"></span>
+            </td>
+            </tr>
+        </table>
+    </div>
+	<script th:inline="javascript">
+/*<![CDATA[*/
+    var networkLoad = /*[[${load}]]*/ 0; // load value passed from Controller
+
+    if (networkLoad > 40) { // your threshold
+        document.getElementById('network-alert').style.display = 'block';
+        document.getElementById('network-alert').innerText = "⚠️ Warning: Network load is critically high (" + networkLoad + "%)!";
+    }
+/*]]>*/
+</script>
+</body>
+</html>
